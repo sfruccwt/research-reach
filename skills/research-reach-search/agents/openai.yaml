@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Reach Search"
+  short_description: "按已确认的研究简报启动隔离搜索并保存完整可追溯证据产物"
+  default_prompt: "Use $research-reach-search to execute the confirmed brief and save evidence artifacts."
