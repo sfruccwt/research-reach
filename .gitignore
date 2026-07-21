@@ -1,0 +1,48 @@
+# Existing Research Reach runtime data stays local.
+/cache/
+/config/
+/locks/
+/logs/
+/notes/
+/reports/
+/runs/
+/runtime/
+/.agents/
+/.codex/
+
+# Generated research work packages and local test output.
+/.tmp/
+/work/
+/**/artifacts/
+/**/brief.json
+/**/report.md
+
+# Python build and test output.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.venv/
+venv/
+
+# Credentials and local configuration.
+.env
+.env.*
+*.pem
+*.key
+*token*
+*secret*
+*cookie*
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Editor and operating-system files.
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
