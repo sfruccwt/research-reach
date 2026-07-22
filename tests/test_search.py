@@ -7,11 +7,30 @@ import unittest
 
 from research_reach.common import load_json
 from research_reach.contracts import load_evidence_jsonl
-from research_reach.search import launch
+from research_reach.search import SEARCH_WORKER_SCHEMA, launch
 from tests.helpers import confirmed_brief, worker_result
 
 
 class SearchTests(unittest.TestCase):
+    def test_worker_schema_requires_every_evidence_property(self) -> None:
+        evidence = SEARCH_WORKER_SCHEMA["properties"]["evidence"]["items"]
+        self.assertEqual(set(evidence["properties"]), set(evidence["required"]))
+
+    def test_search_accepts_confirmed_local_artifact_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            workdir = Path(root)
+            confirmed_brief(workdir)
+            result = worker_result()
+            result["evidence"][0]["url"] = "artifact://csv_token_summary.json"
+            result["evidence"][0]["evidence_kind"] = "metadata"
+            fixture = workdir / "search-output.json"
+            fixture.write_text(json.dumps({"C1": result}), encoding="utf-8")
+
+            status, data, errors = launch(workdir, None, str(fixture))
+            self.assertEqual("ok", status)
+            self.assertEqual([], errors)
+            self.assertEqual(2, data["topics"][0]["evidence_count"])
+
     def test_search_writes_artifacts_and_public_handback_is_compact(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             workdir = Path(root)

@@ -6,12 +6,19 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 
+from research_reach import __version__
 from tests.helpers import topics, worker_result
 
 
 class CliFixtureE2ETests(unittest.TestCase):
+    def test_package_version_matches_project_metadata(self) -> None:
+        project = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        metadata = tomllib.loads(project.read_text(encoding="utf-8"))
+        self.assertEqual(metadata["project"]["version"], __version__)
+
     def _run(self, module: str, *args: str) -> dict:
         environment = dict(os.environ)
         source = str(Path(__file__).resolve().parents[1] / "src")

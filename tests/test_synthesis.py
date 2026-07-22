@@ -7,11 +7,33 @@ import unittest
 
 from research_reach.errors import ResearchReachError
 from research_reach.search import launch
-from research_reach.synthesis import synthesize
+from research_reach.synthesis import SYNTHESIS_SCHEMA, _prompt, synthesize
 from tests.helpers import confirmed_brief, worker_result
 
 
 class SynthesisTests(unittest.TestCase):
+    def test_worker_schema_avoids_unsupported_unique_items(self) -> None:
+        used_urls = SYNTHESIS_SCHEMA["properties"]["used_urls"]
+        self.assertNotIn("uniqueItems", used_urls)
+
+    def test_prompt_lists_exact_allowed_public_urls(self) -> None:
+        evidence = worker_result()["evidence"]
+        evidence.append({
+            "url": "artifact://summary.json",
+            "question_refs": ["q1"],
+            "title": "Local summary",
+            "text": "Aggregate",
+            "evidence_kind": "metadata",
+            "source_name": "Local",
+            "retrieved_at": "2026-07-21",
+        })
+        with tempfile.TemporaryDirectory() as root:
+            prompt = _prompt(confirmed_brief(Path(root)), evidence, [])
+            self.assertIn('"https://example.com/source-1"', prompt)
+            self.assertIn('"https://example.com/source-2"', prompt)
+            allowed_section = prompt.split("Allowed public URLs:\n", 1)[1].split("\n\nEvidence:\n", 1)[0]
+            self.assertNotIn("artifact://summary.json", allowed_section)
+
     def _searched_workdir(self, root: str) -> Path:
         workdir = Path(root)
         confirmed_brief(workdir)

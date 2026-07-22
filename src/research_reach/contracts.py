@@ -6,7 +6,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 from typing import Any, Mapping
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from .common import atomic_write_json, canonical_hash, load_json, string_list, text, utc_now
 from .errors import blocked, invalid
@@ -144,11 +144,24 @@ def normalize_evidence(raw: Mapping[str, Any], topic: Mapping[str, Any]) -> dict
         raise invalid(f"evidence references a question outside {topic_ref}")
     url = text(raw.get("url"), "evidence.url")
     parsed = urlparse(url)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        raise invalid("evidence.url must be an absolute HTTP(S) URL")
+    is_public_url = parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+    artifact_target = unquote(f"{parsed.netloc}{parsed.path}") if parsed.scheme == "artifact" else ""
+    artifact_parts = artifact_target.split("/") if artifact_target else []
+    is_artifact_ref = (
+        parsed.scheme == "artifact"
+        and bool(parsed.netloc)
+        and not parsed.query
+        and not parsed.fragment
+        and "\\" not in artifact_target
+        and all(part not in {"", ".", ".."} and ":" not in part for part in artifact_parts)
+    )
+    if not is_public_url and not is_artifact_ref:
+        raise invalid("evidence.url must be an absolute HTTP(S) URL or a safe artifact:// reference")
     evidence_kind = raw.get("evidence_kind")
     if evidence_kind not in {"search_snippet", "fetched_content", "metadata"}:
         raise invalid("evidence_kind is invalid")
+    if is_artifact_ref and evidence_kind != "metadata":
+        raise invalid("artifact evidence must use evidence_kind metadata")
     item = {
         "schema_version": EVIDENCE_SCHEMA,
         "topic_ref": topic_ref,

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from research_reach.common import load_json
-from research_reach.contracts import brief_hash, load_brief, new_brief, write_brief
+from research_reach.contracts import brief_hash, load_brief, new_brief, normalize_evidence, write_brief
 from research_reach.errors import ResearchReachError
 from tests.helpers import topics
 
@@ -39,6 +39,38 @@ class BriefContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ResearchReachError, "required file does not exist") as raised:
                 load_json(Path(root) / "missing.json")
             self.assertEqual("blocked", raised.exception.status)
+
+    def test_local_artifact_reference_must_be_relative_and_safe(self) -> None:
+        topic = topics()[0]
+        evidence = {
+            "question_refs": ["q1"],
+            "title": "Local summary",
+            "url": "artifact://summary.json",
+            "text": "De-identified aggregate.",
+            "evidence_kind": "metadata",
+            "source_name": "Local artifact",
+            "retrieved_at": "2026-07-21",
+        }
+        normalized = normalize_evidence(evidence, topic)
+        self.assertEqual("artifact://summary.json", normalized["url"])
+
+        for unsafe_url in (
+            "artifact://../secret.csv",
+            "artifact://%2E%2E/secret.csv",
+            "artifact://folder/%2e%2e/secret.csv",
+            "artifact:///summary.json",
+            "artifact://C:/secret.csv",
+            "file:///C:/secret.csv",
+        ):
+            with self.subTest(url=unsafe_url):
+                evidence["url"] = unsafe_url
+                with self.assertRaisesRegex(ResearchReachError, "safe artifact"):
+                    normalize_evidence(evidence, topic)
+
+        evidence["url"] = "artifact://summary.json"
+        evidence["evidence_kind"] = "fetched_content"
+        with self.assertRaisesRegex(ResearchReachError, "evidence_kind metadata"):
+            normalize_evidence(evidence, topic)
 
 
 if __name__ == "__main__":

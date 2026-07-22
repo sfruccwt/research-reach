@@ -24,7 +24,6 @@ SYNTHESIS_SCHEMA: dict[str, Any] = {
         "assessment": {"type": "string", "enum": ["complete", "partial", "insufficient"]},
         "used_urls": {
             "type": "array",
-            "uniqueItems": True,
             "items": {"type": "string", "minLength": 1},
         },
     },
@@ -62,15 +61,25 @@ def _collect(workdir: Path, brief: dict[str, Any]) -> tuple[list[dict[str, Any]]
 
 
 def _prompt(brief: dict[str, Any], evidence: list[dict[str, Any]], uncovered: list[str]) -> str:
+    allowed_public_urls = list(dict.fromkeys(
+        str(item["url"])
+        for item in evidence
+        if isinstance(item.get("url"), str) and str(item["url"]).startswith(("http://", "https://"))
+    ))
     return (
         "You are an isolated Research Reach Synthesis Worker with no network access. Use only the confirmed "
         "brief and supplied evidence. Produce a decision-ready Markdown report matching the audience and product "
         "shape. Distinguish sourced facts from analysis, preserve meaningful conflicts and limitations, and cite "
-        "sources with exact Markdown links. Never invent or normalize a URL. If evidence is incomplete, say so "
+        "public sources with exact Markdown links. Refer to artifact:// evidence by its title, without turning its "
+        "artifact URL into a Markdown link or including it in used_urls. Copy public URLs exactly from the allowed "
+        "list below; do not add, remove, or normalize paths, fragments, query strings, or trailing slashes. Never "
+        "invent a URL. If evidence is incomplete, say so "
         "and choose partial or insufficient. Return only the schema object.\n\nConfirmed brief:\n"
         + json.dumps(brief, ensure_ascii=False, indent=2)
         + "\n\nUncovered question refs:\n"
         + json.dumps(uncovered, ensure_ascii=False)
+        + "\n\nAllowed public URLs:\n"
+        + json.dumps(allowed_public_urls, ensure_ascii=False, indent=2)
         + "\n\nEvidence:\n"
         + json.dumps(evidence, ensure_ascii=False, indent=2)
     )
@@ -118,10 +127,17 @@ def synthesize(workdir: Path, fixture: str | None) -> tuple[str, dict[str, Any],
         raise invalid("Synthesis Worker used_urls is invalid")
     allowed_urls = {str(item.get("url")) for item in evidence if isinstance(item.get("url"), str)}
     report_urls = _urls(markdown)
-    if any(url not in allowed_urls for url in used_urls) or any(url not in allowed_urls for url in report_urls):
-        raise invalid("Synthesis Worker cited a URL not present in evidence")
+    unsupported_urls = sorted({url for url in [*used_urls, *report_urls] if url not in allowed_urls})
+    if unsupported_urls:
+        detail = ", ".join(unsupported_urls[:5])
+        raise invalid(f"Synthesis Worker cited URL not present in evidence: {detail}")
     if set(used_urls) != set(report_urls):
-        raise invalid("Synthesis Worker used_urls does not match report citations")
+        only_declared = sorted(set(used_urls) - set(report_urls))
+        only_report = sorted(set(report_urls) - set(used_urls))
+        raise invalid(
+            "Synthesis Worker used_urls does not match report citations "
+            f"(only in used_urls: {only_declared[:5]}; only in report: {only_report[:5]})"
+        )
     if uncovered and assessment == "complete":
         assessment = "partial"
     digest = brief_hash(brief)

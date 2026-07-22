@@ -25,7 +25,15 @@ SEARCH_WORKER_SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["question_refs", "title", "url", "text", "evidence_kind"],
+                "required": [
+                    "question_refs",
+                    "title",
+                    "url",
+                    "text",
+                    "evidence_kind",
+                    "source_name",
+                    "retrieved_at",
+                ],
                 "properties": {
                     "question_refs": {"type": "array", "minItems": 1, "items": {"type": "string"}},
                     "title": {"type": "string"},
@@ -68,7 +76,9 @@ def _worker_prompt(topic: Mapping[str, Any]) -> str:
         "escalation only when a confirmed source requires a real browser or login state. Stay inside the confirmed topic, "
         "cover its question refs, obey every prohibited action, and stop at the stated condition. Return "
         "only structured evidence. Evidence text must be a source-supported excerpt or concise factual "
-        "summary, never hidden reasoning. Record exact public HTTP(S) URLs.\n\nConfirmed topic:\n"
+        "summary, never hidden reasoning. Record exact public HTTP(S) URLs. For evidence read from a "
+        "confirmed local artifact in the work directory, use an artifact://<relative-name> URL with "
+        "evidence_kind metadata; never use file:// URLs or absolute local paths.\n\nConfirmed topic:\n"
         + json.dumps(topic, ensure_ascii=False, indent=2)
     )
 
