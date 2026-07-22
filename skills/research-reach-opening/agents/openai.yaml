@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Reach Opening"
+  short_description: "将复杂调研请求整理为可审阅、可确认的结构化研究简报"
+  default_prompt: "Use $research-reach-opening to turn this research request into a reviewable brief and wait for confirmation."

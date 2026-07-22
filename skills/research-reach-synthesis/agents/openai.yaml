@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Reach Synthesis"
+  short_description: "基于已确认研究简报和证据产物生成结构化、可追溯的最终报告"
+  default_prompt: "Use $research-reach-synthesis to synthesize the confirmed brief and evidence artifacts into a report."

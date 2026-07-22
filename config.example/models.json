@@ -1,0 +1,5 @@
+{
+  "opening_model": "gpt-5.4-mini",
+  "search_model": "gpt-5.6-sol",
+  "synthesis_model": "gpt-5.6-sol"
+}
