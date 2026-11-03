@@ -12,7 +12,9 @@ There is no cross-stage Run Store or lifecycle state machine. The confirmed brie
 
 ## Current status
 
-I rarely use Research Reach now. The Opening stage for developing research questions may still be useful; the other stages no longer add much to my current workflow.
+I am retiring Research Reach as a complete research workflow. Its design is too broad and heavyweight for how I usually work: I often already have some information and just need to search further from there. The full three-stage process adds more structure than these tasks need.
+
+The Opening workflow for developing research questions remains a valuable asset and is worth reusing in future work.
 
 ## Install
 
