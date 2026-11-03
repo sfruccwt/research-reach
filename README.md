@@ -10,6 +10,10 @@ research-reach-synthesis -> report.md
 
 There is no cross-stage Run Store or lifecycle state machine. The confirmed brief and evidence files are the complete handoff contract.
 
+## Current status
+
+I rarely use Research Reach now. The Opening stage for developing research questions may still be useful; the other stages no longer add much to my current workflow.
+
 ## Install
 
 ```powershell
